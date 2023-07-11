@@ -1,0 +1,24 @@
+{
+  "name": "eimis",
+  "version": "0.1.0",
+  "description": "EIMIS matrix test bridge",
+  "main": "lib/index.js",
+  "scripts": {
+    "start": "tsc && node ./lib/index.js -p 9000",
+    "generate": "node ./lib/index.js -r",
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "matrix-appservice-bridge": "^9.0.0",
+    "request": "^2.88.2"
+  },
+  "devDependencies": {
+    "@types/nedb": "^1.8.13",
+    "@types/node": "^18",
+    "@types/request": "^2.48.5",
+    "typescript": "^5.0.4"
+  }
+}
