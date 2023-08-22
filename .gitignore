@@ -49,3 +49,4 @@ node_modules/
 # Project specific files to ignore
 lib/
 *.db
+*registration.yaml
