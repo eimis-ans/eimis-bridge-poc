@@ -1,0 +1,25 @@
+version: "3.3"
+
+services:
+
+  element:
+    image: vectorim/element-web:v1.11.31
+    ports:
+      - 8083:80
+    volumes:
+      - ./element-config.json:/app/config.json
+
+  synapse:
+    image: matrixdotorg/synapse:v1.83.0
+    volumes:
+     - matrix-data:/data
+     - ./mx-conf:/mx-conf/
+    environment:
+      - SYNAPSE_CONFIG_PATH=/mx-conf/homeserver.yaml
+    ports:
+      - 8008:8008
+    network_mode: "host"
+
+volumes:
+  matrix-data:
+
