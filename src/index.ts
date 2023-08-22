@@ -16,90 +16,114 @@ limitations under the License.
 // Usage:
 // node index.js -r -u "http://localhost:9000" # remember to add the registration!
 // node index.js -p 9000
-import http from 'http';
-import querystring from 'querystring';
-import requestLib from 'request';
 
-import { Cli, Bridge, AppServiceRegistration, Logger, MatrixUser } from 'matrix-appservice-bridge';
+import { AppServiceRegistration, Bridge, Cli, Logger } from 'matrix-appservice-bridge';
 
-Logger.configure({ console: "info" });
+Logger.configure({ console: "debug" });
 const log = new Logger("index");
 
 const PORT = 9898; // eimis needs to hit this port e.g. use "ngrok 9898"
-const ROOM_ID = "!YiuxjYhPLIZGVVkFjT:localhost"; // this room must have join_rules: public
-const SLACK_WEBHOOK_URL = "https://hooks.eimis.com/services/AAAA/BBBBB/CCCCC";
 let bridge: Bridge;
-
-http.createServer(function (request, response) {
-    console.log(request.method + " " + request.url);
-
-    let body = '';
-    request.on('data', function (chunk) {
-        body += chunk;
-    });
-
-    request.on("end", function () {
-        const params = querystring.parse(body);
-        if (params.user_id !== "USLACKBOT") {
-            const intent = bridge.getIntent(`@eimis_${params.user_name}:localhost`);
-            intent.sendText(ROOM_ID, Array.isArray(params.text) ? params.text.join(' ') : params.text);
-        }
-        response.writeHead(200, { "Content-Type": "application/json" });
-        response.write(JSON.stringify({}));
-        response.end();
-    });
-}).listen(PORT);
-
-
 
 new Cli({
     registrationPath: "eimis-registration.yaml",
     generateRegistration: function (reg, callback) {
+        log.info("generate token")
         reg.setId(AppServiceRegistration.generateToken());
         reg.setHomeserverToken(AppServiceRegistration.generateToken());
         reg.setAppServiceToken(AppServiceRegistration.generateToken());
-        reg.setSenderLocalpart("emeistress");
+        reg.setSenderLocalpart("emeis_tress");
         reg.addRegexPattern("users", "@eimis_.*", true);
+        reg.addRegexPattern('aliases', '#*.*', false);
         callback(reg);
     },
     run: function (port) {
         bridge = new Bridge({
             homeserverUrl: "http://matrix.local:8008",
-            domain: "localhost",
+            domain: "matrix.local",
             registration: "eimis-registration.yaml",
-
+            queue: { type: "none"},
+            // disableContext: true,
+            suppressEcho: true,
             controller: {
                 onUserQuery: function (queriedUser) {
+                    console.log("onUserQuery " + queriedUser);
                     return {}; // auto-provision users with no additonal data
                 },
 
-                onEvent: function (request, context) {
+                onEphemeralEvent: function(request){
+                    log.info("onEphemeralEvent : "+ request.getData());    
+                },
+
+                onAliasQuery: function(alias: string, aliasLocalpart: string){
+                    log.info("onAliasQuery : "+ alias);
+                },
+
+                // onLog: function(text, isError){
+                //     console.log("onLog rien sur? " + text);
+                // },
+
+                onEvent: function(request, context) {
                     const event = request.getData();
-                    log.info("Event : "+ event);
-                    if (event.type !== "m.room.message" || !event.content || event.room_id !== ROOM_ID) {
-                        return;
+                    log.info(event);
+                    log.info(context);
+                    try{
+                        // of course this fails if eimis_firstUser is not in the room
+                        if (event.type === "m.room.message" && event.sender !== '@eimis_firstUser:matrix.local') {
+                            const intent = bridge.getIntent("@eimis_firstUser:matrix.local");
+                            intent.ensureProfile("first user");
+                            intent.sendText(event.room_id, "Ta gueule");
+                            return;
+                        }else if(event.type === 'm.room.encrypted'){
+                            const intent = bridge.getIntent("@eimis_firstUser:matrix.local");
+                            intent.sendText(event.room_id, "What??");
+                        }
+                        else if(event.type === 'm.room.member'){
+                            const intent = bridge.getIntent(event.state_key);
+                            // intent.ensureProfile("first user");
+                            intent.sendText(event.room_id, "Thanks for the invite!");
+                        }
+                    }catch(e){
+                        log.error(e);
                     }
-                    requestLib({
-                        method: "POST",
-                        json: true,
-                        uri: SLACK_WEBHOOK_URL,
-                        body: {
-                            username: event.sender,
-                            text: event.content.body
-                        }
-                    }, function (err, res) {
-                        if (err) {
-                            console.log("HTTP Error: %s", err);
-                        }
-                        else {
-                            console.log("HTTP %s", res.statusCode);
-                        }
-                    });
                 }
-            }
+            },
+
         });
         log.info("Matrix-side listening on port ", port);
-        bridge.run(port);
-        let user = new MatrixUser("firstUser");
+        // bridge.run(port);
+        // let user = new MatrixUser("firstUser");
+        gogo(bridge, port)
     }
 }).run();
+
+
+async function gogo(bridge: Bridge, port: number){
+    await bridge.initialise();
+    bridge.listen(port);
+    // console.log(bridge);
+    // create a ghost user
+    // const intent = bridge.getIntent("@eimis_user3:matrix.local");
+    // intent.ensureProfile("eimis_user3");
+
+    //// send message in existing room
+    // const intent = bridge.getIntent("@eimis_firstUser:matrix.local");
+    // intent.ensureProfile("first user");
+    // intent.sendText("!CaYHXgonlkSZvkKPur:matrix.local", "Ta gueule de con");
+
+    //// create public room and invite someone
+    // const intent = bridge.getIntent("@eimis_User2:matrix.local");
+    // intent.createRoom({
+    //     createAsClient: true,
+    //     options: {
+    //         visibility: "public",
+    //         name: "test",
+    //         topic: "test",
+    //         preset: "public_chat",
+    //         invite: ["@root:matrix.local"]
+    //     }
+    // }).then((res) => {
+    //     console.log("Room created, id :" + res);
+    // });
+
+}
