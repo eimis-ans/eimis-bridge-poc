@@ -1,14 +1,19 @@
-# Test bridge
+# EIMIS Synapse test bridge
 
 ## Prerequisites
 
-Edit your /etc/hosts to add `127.0.0.1  bridge.local`
+- Node, npm, docker, docker-compose installed
+- Edit your /etc/hosts to add `127.0.0.1  bridge.local`
 
 ## Build
 
 ```bash
 npm build
 ```
+
+## Synapse server
+
+[Start your Synapse instance with docker-compose](./synapse/readme.md)
 
 ## Generate app service file
 
@@ -30,10 +35,6 @@ app_service_config_files:\n\
   - /mx-conf/eimis-registration.yaml\
 " >> synapse/mx-conf/homeserver.yaml
 ```
-
-## Synapse server
-
-[Start your Synapse instance with docker-compose](./synapse/readme.md)
 
 ## Start
 

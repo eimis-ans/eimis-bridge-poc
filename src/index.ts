@@ -13,16 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Usage:
-// node index.js -r -u "http://localhost:9000" # remember to add the registration!
-// node index.js -p 9000
-
 import { AppServiceRegistration, Bridge, Cli, Logger } from 'matrix-appservice-bridge';
 
 Logger.configure({ console: "debug" });
 const log = new Logger("index");
 
-const PORT = 9898; // eimis needs to hit this port e.g. use "ngrok 9898"
 let bridge: Bridge;
 
 new Cli({
@@ -41,7 +36,7 @@ new Cli({
         bridge = new Bridge({
             homeserverUrl: "http://matrix.local:8008",
             domain: "matrix.local",
-            registration: "eimis-registration.yaml",
+            registration: "./synapse/mx-conf/eimis-registration.yaml",
             queue: { type: "none"},
             // disableContext: true,
             suppressEcho: true,
@@ -93,23 +88,22 @@ new Cli({
         log.info("Matrix-side listening on port ", port);
         // bridge.run(port);
         // let user = new MatrixUser("firstUser");
-        gogo(bridge, port)
+        myStart(bridge, port)
     }
 }).run();
 
 
-async function gogo(bridge: Bridge, port: number){
+async function myStart(bridge: Bridge, port: number){
     await bridge.initialise();
     bridge.listen(port);
-    // console.log(bridge);
-    // create a ghost user
+    //// create a ghost user
     // const intent = bridge.getIntent("@eimis_user3:matrix.local");
     // intent.ensureProfile("eimis_user3");
 
     //// send message in existing room
     // const intent = bridge.getIntent("@eimis_firstUser:matrix.local");
     // intent.ensureProfile("first user");
-    // intent.sendText("!CaYHXgonlkSZvkKPur:matrix.local", "Ta gueule de con");
+    // intent.sendText("!CaYHXgonlkSZvkKPur:matrix.local", "Hello room!");
 
     //// create public room and invite someone
     // const intent = bridge.getIntent("@eimis_User2:matrix.local");
@@ -125,5 +119,4 @@ async function gogo(bridge: Bridge, port: number){
     // }).then((res) => {
     //     console.log("Room created, id :" + res);
     // });
-
 }
