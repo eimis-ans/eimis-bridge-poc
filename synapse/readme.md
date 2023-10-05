@@ -24,7 +24,7 @@ and wait a bit...
 ### Create new matrix user
 
 ```bash
-docker exec -it matrix_synapse_1 register_new_matrix_user -c /mx-conf/homeserver.yaml
+docker exec -it synapse_synapse_1 register_new_matrix_user -c /mx-conf/homeserver.yaml
 ```
 
 ## Log in

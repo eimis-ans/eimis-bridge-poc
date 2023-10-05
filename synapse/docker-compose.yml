@@ -12,14 +12,9 @@ services:
   synapse:
     image: matrixdotorg/synapse:v1.83.0
     volumes:
-     - matrix-data:/data
+     - ./mx-data:/data
      - ./mx-conf:/mx-conf/
     environment:
       - SYNAPSE_CONFIG_PATH=/mx-conf/homeserver.yaml
     ports:
       - 8008:8008
-    network_mode: "host"
-
-volumes:
-  matrix-data:
-

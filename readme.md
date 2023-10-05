@@ -24,7 +24,8 @@ npm run generate -- -u http://bridge.local:9000
 copy or link generated file to your Synapse config
 
 ```bash
-ln -s synapse/mx-conf/eimis-registration.yaml eimis-registration.yaml
+cd synapse/mx-conf
+ln -s ../../eimis-registration.yaml eimis-registration.yaml
 ```
 
 ### Edit synapse configuration
@@ -34,6 +35,11 @@ echo "\
 app_service_config_files:\n\
   - /mx-conf/eimis-registration.yaml\
 " >> synapse/mx-conf/homeserver.yaml
+```
+and restart synapse
+```bash
+cd synapse/mx-conf
+docker-compose down && docker-compose up -d
 ```
 
 ## Start
