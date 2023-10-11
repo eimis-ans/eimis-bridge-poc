@@ -4,7 +4,7 @@
   "description": "EIMIS matrix test bridge",
   "main": "lib/index.js",
   "scripts": {
-    "start": "tsc && node ./lib/index.js -p 9000",
+    "start": "tsc && node ./lib/index.js -c config/config.sample.yaml -p 9000",
     "generate": "node ./lib/index.js -r",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
