@@ -12,7 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "matrix-appservice-bridge": "^9.0.0",
+    "matrix-appservice-bridge": "^9.0.1",
     "request": "^2.88.2"
   },
   "devDependencies": {
