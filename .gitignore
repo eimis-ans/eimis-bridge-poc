@@ -43,8 +43,9 @@ node_modules/
 .env.production.local
 .env.local
 
-# Stores VSCode versions used for testing VSCode extensions
+# IDE specific exclusion
 .vscode-test
+.idea
 
 # Project specific files to ignore
 lib/
