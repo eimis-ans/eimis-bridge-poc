@@ -1,0 +1,7 @@
+matrix/
+debug/
+lib/
+node_modules/
+.idea/
+*.db
+config/config.yaml

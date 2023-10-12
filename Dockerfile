@@ -14,6 +14,7 @@ RUN npm install
 
 # Bundle app source
 COPY . .
+COPY config/config.sample.yaml config/config.yaml
 
 EXPOSE 9000
 

@@ -14,7 +14,7 @@ npm build
 
 ## Synapse server
 
-[Start your Synapse instance with docker-compose](./synapse/readme.md)
+[Start your Synapse instance with docker-compose](matrix/readme.md)
 
 ## Generate app service file
 
@@ -25,7 +25,7 @@ npm run generate -- -u http://bridge.local:9000
 copy or link generated file to your Synapse config
 
 ```bash
-cd synapse/mx-conf
+cd matrix/mx-conf
 ln -s ../../eimis-registration.yaml eimis-registration.yaml
 ```
 
