@@ -13,12 +13,16 @@
   "license": "ISC",
   "dependencies": {
     "matrix-appservice-bridge": "^9.0.1",
-    "request": "^2.88.2"
+    "nunjucks": "^3.2.4",
+    "request": "^2.88.2",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/nedb": "^1.8.13",
     "@types/node": "^18",
+    "@types/nunjucks": "^3.2.4",
     "@types/request": "^2.48.5",
+    "@types/uuid": "^9.0.5",
     "typescript": "^5.0.4"
   }
 }

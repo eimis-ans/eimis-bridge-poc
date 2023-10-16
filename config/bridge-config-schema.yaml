@@ -17,8 +17,18 @@ properties:
         type: number
       appservice_host:
         type: string
+  tls:
+    type: object
+    required: ["key_file", "crt_file"]
+    properties:
+      key_file:
+        type: string
+      crt_file:
+        type: string
   username_prefix:
     type: string
+
+  slack_hook_port: 9898
 
   logging:
     type: object

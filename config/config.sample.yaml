@@ -29,6 +29,16 @@ homeserver:
 #
 username_prefix: "tierce_"
 
+# Optional. TLS files to be used when handling Slack requests
+#tls:
+  #key_file: /path/to/tls.key
+  #crt_file: /path/to/tls.crt
+
+# Port for incoming Slack requests from webhooks and event API messages
+# Optional if using RTM API, required otherwise.
+#
+slack_hook_port: 9898
+
 # Optional
 # logging:
 #   console: "info" # One of "debug", "info", "warning", "error", "silent"

@@ -26,7 +26,7 @@ copy or link generated file to your Synapse config
 
 ```bash
 cd matrix/mx-conf
-ln -s ../../eimis-registration.yaml eimis-registration.yaml
+cp ../../eimis-registration.yaml eimis-registration.yaml
 ```
 
 ### Edit synapse configuration

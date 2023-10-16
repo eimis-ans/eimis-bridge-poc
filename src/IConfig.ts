@@ -50,10 +50,10 @@ export interface IConfig {
     //     pantalaimon_url: string;
     // };
     //
-    // tls?: {
-    //     key_file: string;
-    //     crt_file: string;
-    // };
+    tls?: {
+        key_file: string;
+        crt_file: string;
+    };
     //
     // bot_profile?: {
     //     displayname?: string;
@@ -84,7 +84,7 @@ export interface IConfig {
     //     log_level?: string;
     // };
     //
-    // slack_hook_port?: number;
+    slack_hook_port?: number;
     // slack_client_opts?: WebClientOptions;
     // slack_proxy?: string;
     // enable_metrics: boolean;

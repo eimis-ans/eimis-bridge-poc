@@ -1,9 +1,5 @@
 # Synapse instance
 
-## Prerequisites
-
-`../setup-variable.sh` has been run
-
 ### Matrix configuration
 
 - Linux :
@@ -19,11 +15,6 @@
     ```bash
     sudo chmod a+w -R ./mx-conf/
     ```
-- Windows:
-  Initialize Synapse configuration :
-    ```powershell
-    .\init.ps1
-    ```
 
 ## start
 
@@ -36,11 +27,7 @@ and wait a bit until synapse container is healthy
 ### Create new matrix user
 - Linux
   ```bash
-  docker exec -it matrix_synapse_1 register_new_matrix_user -u admin_matrix -a -c /mx-conf/homeserver.yaml
-  ```
-- Windows
-  ```bash
-  docker exec -it matrix-synapse-1 register_new_matrix_user -u admin_matrix -a -c /mx-conf/homeserver.yaml
+  docker exec -it matrix_synapse_1 register_new_matrix_user -u eimis_firstUser -a -c /mx-conf/homeserver.yaml
   ```
 ## Log in
 You can check that synapse server is running at http://matrix.local:8008/_matrix/static/

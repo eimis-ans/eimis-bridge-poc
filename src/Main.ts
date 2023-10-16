@@ -1,10 +1,13 @@
 import {AppServiceRegistration, Bridge, Logger} from "matrix-appservice-bridge";
 import {IConfig} from "./IConfig";
+import {SlackHookHandler} from "./SlackHookHandler";
 
 const log = new Logger("Main");
 export class Main {
     private ready = false;
     private bridge: Bridge;
+    // public readonly oauth2: OAuth2|null = null;
+    private slackHookHandler?: SlackHookHandler;
 
     constructor(public readonly config: IConfig, registration: AppServiceRegistration) {
         this.bridge = new Bridge({
@@ -26,7 +29,7 @@ export class Main {
                 //     log.info("onLog rien sur? " + text);
                 // },
 
-                onEvent: function(request, context) {
+                onEvent: (request, context) => {
                     const event = request.getData();
                     log.info(event);
                     log.info(context);
@@ -70,6 +73,9 @@ export class Main {
             // } : undefined,
         });
 
+        if (config.slack_hook_port) {
+            this.enableHookHandler();
+        }
     }
 
 
@@ -81,7 +87,14 @@ export class Main {
      */
     public async run(cliPort: number): Promise<number> {
         await this.bridge.initialise();
+        if (this.slackHookHandler) {
+            if (!this.config.slack_hook_port) {
+                throw Error('config option slack_hook_port must be defined');
+            }
+            await this.slackHookHandler.startAndListen(this.config.slack_hook_port, this.config.tls);
+        }
         await this.bridge.listen(cliPort);
+        await this.pingBridge();
         //// create a ghost user
         // const intent = bridge.getIntent("@eimis_user3:matrix.local");
         // intent.ensureProfile("eimis_user3");
@@ -106,8 +119,38 @@ export class Main {
         //     log.info("Room created, id :" + res);
         // });
 
-        log.info("Bridge initialised");
+        log.info("Bridge initialised and listening on " + cliPort);
         this.ready = true;
         return cliPort;
+    }
+
+    private async pingBridge() {
+        let internalRoom: string|null;
+        try {
+            // internalRoom = await this.datastore.getUserAdminRoom("-internal-");
+            if (!internalRoom) {
+                internalRoom = (await this.bridge.getIntent().createRoom({ options: {}})).room_id;
+                // await this.datastore.setUserAdminRoom("-internal-", internalRoom);
+            }
+            const time = await this.bridge.pingAppserviceRoute(internalRoom);
+            log.info(`Successfully pinged the bridge. Round trip took ${time}ms`);
+        }
+        catch (ex) {
+            log.error("Homeserver cannot reach the bridge. You probably need to adjust your configuration.", ex);
+        }
+    }
+
+
+    async disableHookHandler() {
+        if (this.slackHookHandler) {
+            await this.slackHookHandler.close();
+            this.slackHookHandler = undefined;
+            log.info("Disabled hook handler");
+        }
+    }
+
+    public enableHookHandler() {
+        this.slackHookHandler = new SlackHookHandler(this);
+        log.info("Enabled hook handler");
     }
 }
