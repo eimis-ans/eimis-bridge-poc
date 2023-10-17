@@ -48,3 +48,9 @@ slack_hook_port: 9898
 #   files:
 #       "./debug.log": "info"
 #       "./error.log": "error"
+
+# # Optional. Set the bot's profile on startup
+bot_profile:
+  # Optional. Set the displayname.
+  #
+  displayname: "Bridge Bot"

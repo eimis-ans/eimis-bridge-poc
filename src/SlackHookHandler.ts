@@ -105,7 +105,7 @@ export class SlackHookHandler extends BaseSlackHandler {
                     // this.handleWebhook(method, url, params, res).catch((ex) => {
                     //     log.error("Failed to handle webhook event", ex);
                     // });
-                    log.error("Unable to handle wbehook... for now");
+                    log.error("Unable to handle webhook... for now");
                 }
             } catch (e) {
                 log.error("SlackHookHandler failed:", e);

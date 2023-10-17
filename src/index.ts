@@ -41,7 +41,7 @@ const cli = new Cli({
         reg.setHomeserverToken(AppServiceRegistration.generateToken());
         reg.setAppServiceToken(AppServiceRegistration.generateToken());
         reg.setSenderLocalpart("bridgebot");
-        reg.addRegexPattern("users", "@_bridge_.*", true);
+        reg.addRegexPattern("users", "@*.*", true);
         reg.addRegexPattern('aliases', '#_bridge_.*', false);
         callback(reg);
     },

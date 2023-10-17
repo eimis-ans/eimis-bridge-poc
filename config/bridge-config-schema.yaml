@@ -46,3 +46,10 @@ properties:
           additionalProperties:
             - type: "string"
               enum: ["error","warn","info","debug"]
+  bot_profile:
+    type: object
+    properties:
+      displayname:
+        type: string
+      avatar_url:
+        type: string

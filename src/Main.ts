@@ -1,12 +1,13 @@
-import {AppServiceRegistration, Bridge, Logger} from "matrix-appservice-bridge";
+import {AppServiceRegistration, Bridge, Intent, Logger, StateLookup} from "matrix-appservice-bridge";
 import {IConfig} from "./IConfig";
 import {SlackHookHandler} from "./SlackHookHandler";
 
+const STARTUP_RETRY_TIME_MS = 5000;
 const log = new Logger("Main");
 export class Main {
     private ready = false;
     private bridge: Bridge;
-    // public readonly oauth2: OAuth2|null = null;
+    private stateStorage: StateLookup|null = null;
     private slackHookHandler?: SlackHookHandler;
 
     constructor(public readonly config: IConfig, registration: AppServiceRegistration) {
@@ -32,7 +33,7 @@ export class Main {
                 onEvent: (request, context) => {
                     const event = request.getData();
                     log.info(event);
-                    log.info(context);
+                    log.info("context=" + context);
                     try{
                         // of course this fails if eimis_firstUser is not in the room
                         if (event.type === "m.room.message" && event.sender !== '@eimis_firstUser:matrix.local') {
@@ -78,7 +79,29 @@ export class Main {
         }
     }
 
+    public get botIntent(): Intent {
+        return this.bridge.getIntent();
+    }
 
+    public get botUserId(): string {
+        return this.bridge.getBot().getUserId();
+    }
+
+    /**
+     * Ensures the bridge bot is registered and updates its profile info.
+     */
+    private async applyBotProfile() {
+        log.info("Ensuring the bridge bot is registered");
+        const intent = this.botIntent;
+        await intent.ensureRegistered(true);
+        const profile = await intent.getProfileInfo(this.botUserId);
+        if (this.config.bot_profile?.displayname && profile.displayname !== this.config.bot_profile.displayname) {
+            await intent.setDisplayName(this.config.bot_profile.displayname);
+        }
+        if (this.config.bot_profile?.avatar_url && profile.avatar_url !== this.config.bot_profile.avatar_url) {
+            await intent.setAvatarUrl(this.config.bot_profile.avatar_url);
+        }
+    }
 
     /**
      * Starts the bridge.
@@ -95,6 +118,37 @@ export class Main {
         }
         await this.bridge.listen(cliPort);
         await this.pingBridge();
+
+        this.stateStorage = new StateLookup({
+            intent: this.botIntent,
+            eventTypes: ["m.room.member", "m.room.power_levels"],
+        });
+
+        let joinedRooms: string[]|null = null;
+        while(joinedRooms === null) {
+            try {
+                joinedRooms = await this.bridge.getBot().getJoinedRooms() as string[];
+            } catch (ex) {
+                const error = ex as {errcode?: string};
+                if (error.errcode === 'M_UNKNOWN_TOKEN') {
+                    log.error(
+                        "The homeserver doesn't recognise this bridge, have you configured the homeserver with the appservice registration file?"
+                    );
+                } else {
+                    log.error("Failed to fetch room list:", ex);
+                }
+                log.error(`Waiting ${STARTUP_RETRY_TIME_MS}ms before retrying`);
+                await new Promise(((resolve) => setTimeout(resolve, STARTUP_RETRY_TIME_MS)));
+            }
+        }
+
+        try {
+            await this.applyBotProfile();
+        } catch (ex) {
+            log.warn(`Failed to set bot profile on startup: ${ex}`);
+        }
+
+
         //// create a ghost user
         // const intent = bridge.getIntent("@eimis_user3:matrix.local");
         // intent.ensureProfile("eimis_user3");
@@ -119,7 +173,7 @@ export class Main {
         //     log.info("Room created, id :" + res);
         // });
 
-        log.info("Bridge initialised and listening on " + cliPort);
+        // log.info("Bridge initialised and listening on " + cliPort);
         this.ready = true;
         return cliPort;
     }

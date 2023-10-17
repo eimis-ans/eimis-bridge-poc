@@ -54,11 +54,11 @@ export interface IConfig {
         key_file: string;
         crt_file: string;
     };
-    //
-    // bot_profile?: {
-    //     displayname?: string;
-    //     avatar_url?: string;
-    // }
+
+    bot_profile?: {
+        displayname?: string;
+        avatar_url?: string;
+    }
     //
     // caching?: {
     //     ghostUserCache: number,
