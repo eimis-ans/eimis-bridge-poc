@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "scripts": {
     "start": "tsc && node ./lib/index.js -c config/config.yaml -p 9000",
-    "generate": "node ./lib/index.js -r",
+    "generate": "node ./lib/index.js -r -u http://localhost:9000",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -15,6 +15,7 @@
     "matrix-appservice-bridge": "^9.0.1",
     "nunjucks": "^3.2.4",
     "request": "^2.88.2",
+    "Slackdown": "git+https://Half-Shot@github.com/half-shot/slackdown.git",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

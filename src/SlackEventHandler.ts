@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {BaseSlackHandler, ISlackEvent} from "./BaseSlackHandler";
+import {BaseSlackHandler, ISlackEvent, ISlackMessageEvent} from "./BaseSlackHandler";
 import {Main} from "./Main";
 import {Logger} from "matrix-appservice-bridge";
+import {BridgedRoom} from "./BridgedRoom";
 
 const log = new Logger("SlackEventHandler");
 //
@@ -96,7 +97,7 @@ const log = new Logger("SlackEventHandler");
 
 const HTTP_OK = 200;
 
-export type EventHandlerCallback = (status: number, body?: string, headers?: {[header: string]: string}) => void;
+export type EventHandlerCallback = (status: number, body?: string, headers?: { [header: string]: string }) => void;
 
 export class SlackEventHandler extends BaseSlackHandler {
     // /**
@@ -143,7 +144,7 @@ export class SlackEventHandler extends BaseSlackHandler {
             log.debug("Received slack event:", event, teamId);
             // const endTimer = this.main.startTimer("remote_request_seconds");
 
-            let err: Error|null = null;
+            let err: Error | null = null;
             try {
                 await this.handleEvent(event, teamId);
             } catch (ex) {
@@ -186,8 +187,8 @@ export class SlackEventHandler extends BaseSlackHandler {
     protected async handleEvent(event: ISlackEvent, teamId: string): Promise<void> {
         switch (event.type) {
             case "message":
-                // await this.handleMessageEvent(event as ISlackMessageEvent, teamId);
-                // break;
+                await this.handleMessageEvent(event as ISlackMessageEvent, teamId);
+                break;
             case "reaction_added":
             // case "reaction_removed":
             //     await this.handleReaction(event as ISlackEventReaction, teamId);
@@ -220,105 +221,109 @@ export class SlackEventHandler extends BaseSlackHandler {
         }
     }
 
-    // /**
-    //  * Attempts to handle the `message` event.
-    //  *
-    //  * Sends a message to Matrix if it understands enough of the message to do so.
-    //  * Attempts to make the message as native-matrix feeling as it can.
-    //  * @param ISlackEventParamsMessage The slack message event to handle.
-    //  */
-    // protected async handleMessageEvent(event: ISlackMessageEvent, teamId: string): Promise<void> {
-    //     const room = this.main.rooms.getBySlackChannelId(event.channel) as BridgedRoom;
-    //     const team = await this.main.datastore.getTeam(teamId);
-    //     if (!room) { throw Error("unknown_channel"); }
-    //     if (!team) { throw Error("unknown_team"); }
-    //
-    //     if (event.bot_id && (event.bot_id === team.bot_id)) {
-    //         return;
-    //     }
-    //
-    //     if (event.subtype !== "message_deleted" && event.message && event.message.subtype === "tombstone") {
-    //         // Filter out tombstones early, we only care about them on deletion.
-    //         throw Error("ignored");
-    //     }
-    //
-    //     // Only count received messages that aren't self-reflections
-    //     this.main.incCounter(METRIC_RECEIVED_MESSAGE, {side: "remote"});
-    //
-    //     const msg = {
-    //         ...event,
-    //         channel_id: event.channel,
-    //         team_domain: team.domain || team.id,
-    //         team_id: teamId,
-    //         user_id: event.user || event.bot_id!,
-    //     };
-    //
-    //     if (!room.SlackClient) {
-    //         // If we can't look up more details about the message
-    //         // (because we don't have a master token), but it has text,
-    //         // just send the message as text.
-    //         log.warn("no slack token for " + room.SlackChannelId);
-    //         return room.onSlackMessage(msg);
-    //     }
-    //
-    //     // Handle events with attachments like bot messages.
-    //     if (msg.type === "message" && msg.attachments) {
-    //         for (const attachment of msg.attachments) {
-    //             msg.text = attachment.fallback;
-    //             msg.text = await this.doChannelUserReplacements(msg, msg.text, room.SlackClient);
-    //             return await room.onSlackMessage(msg);
-    //         }
-    //         if (msg.text === "") {
-    //             return;
-    //         }
-    //     }
-    //
-    //     // In this method we must standardise the message object so that
-    //     // getGhostForSlackMessage works correctly.
-    //     if (msg.subtype === "file_comment" && msg.comment) {
-    //         msg.user_id = msg.comment.user;
-    //     } else if (msg.subtype === "message_changed" && msg.message && msg.previous_message) {
-    //         msg.user_id = msg.message.user!;
-    //         msg.text = msg.message.text;
-    //         msg.previous_message.text = await this.doChannelUserReplacements(
-    //             msg, msg.previous_message?.text, room.SlackClient
-    //         );
-    //
-    //         // Check if the edit was sent by a bot
-    //         if (msg.message.bot_id !== undefined) {
-    //             // Check the edit wasn't sent by us
-    //             if (msg.message.bot_id === team.bot_id) {
-    //                 return;
-    //             } else {
-    //                 msg.user_id = msg.message.bot_id;
-    //             }
-    //         }
-    //     } else if (msg.subtype === "message_deleted" && msg.deleted_ts) {
-    //         const originalEvent = await this.main.datastore.getEventBySlackId(msg.channel, msg.deleted_ts);
-    //         if (originalEvent) {
-    //             const botClient = this.main.botIntent.matrixClient;
-    //             await botClient.redactEvent(originalEvent.roomId, originalEvent.eventId);
-    //             return;
-    //         }
-    //         // If we don't have the event
-    //         throw Error("unknown_message");
-    //     } else if (msg.subtype === "message_replied") {
-    //         // Slack sends us one of these as well as a normal message event
-    //         // when using RTM, so we ignore it.
-    //         return;
-    //     }
-    //
-    //     if (!room.SlackClient) {
-    //         // If we can't look up more details about the message
-    //         // (because we don't have a master token), but it has text,
-    //         // just send the message as text.
-    //         log.warn("no slack token for " + team.domain || room.SlackChannelId);
-    //         return room.onSlackMessage(event);
-    //     }
-    //
-    //     msg.text = await this.doChannelUserReplacements(msg, msg.text, room.SlackClient);
-    //     return room.onSlackMessage(msg);
-    // }
+    /**
+     * Attempts to handle the `message` event.
+     *
+     * Sends a message to Matrix if it understands enough of the message to do so.
+     * Attempts to make the message as native-matrix feeling as it can.
+     * @param event
+     * @param teamId
+     */
+    protected async handleMessageEvent(event: ISlackMessageEvent, teamId: string): Promise<void> {
+        const room = this.main.rooms.getBySlackChannelId(event.channel) as BridgedRoom;
+        const team = await this.main.datastore.getTeam(teamId);
+        if (!room) {
+            throw Error("unknown_channel");
+        }
+        if (!team) {
+            throw Error("unknown_team");
+        }
+
+        if (event.bot_id && (event.bot_id === team.bot_id)) {
+            return;
+        }
+
+        if (event.subtype !== "message_deleted" && event.message && event.message.subtype === "tombstone") {
+            // Filter out tombstones early, we only care about them on deletion.
+            throw Error("ignored");
+        }
+
+        // Only count received messages that aren't self-reflections
+        // this.main.incCounter(METRIC_RECEIVED_MESSAGE, {side: "remote"});
+
+        const msg = {
+            ...event,
+            channel_id: event.channel,
+            team_domain: team.domain || team.id,
+            team_id: teamId,
+            user_id: event.user || event.bot_id!,
+        };
+
+        // if (!room.SlackClient) {
+        //     // If we can't look up more details about the message
+        //     // (because we don't have a master token), but it has text,
+        //     // just send the message as text.
+        //     log.warn("no slack token for " + room.SlackChannelId);
+        //     return room.onSlackMessage(msg);
+        // }
+
+        // Handle events with attachments like bot messages.
+        if (msg.type === "message" && msg.attachments) {
+            for (const attachment of msg.attachments) {
+                msg.text = attachment.fallback;
+                // msg.text = await this.doChannelUserReplacements(msg, msg.text, room.SlackClient);
+                return await room.onSlackMessage(msg);
+            }
+            if (msg.text === "") {
+                return;
+            }
+        }
+
+        // In this method we must standardise the message object so that
+        // getGhostForSlackMessage works correctly.
+        if (msg.subtype === "file_comment" && msg.comment) {
+            // msg.user_id = msg.comment.user;
+            log.debug("Message with subtype file_comment or comment not yet implemented");
+            return;
+        } else if (msg.subtype === "message_changed" && msg.message && msg.previous_message) {
+            // msg.user_id = msg.message.user!;
+            // msg.text = msg.message.text;
+            // // msg.previous_message.text = await this.doChannelUserReplacements(
+            // //     msg, msg.previous_message?.text, room.SlackClient
+            // // );
+            //
+            // // Check if the edit was sent by a bot
+            // if (msg.message.bot_id !== undefined) {
+            //     // Check the edit wasn't sent by us
+            //     if (msg.message.bot_id === team.bot_id) {
+            //         return;
+            //     } else {
+            //         msg.user_id = msg.message.bot_id;
+            //     }
+            // }
+            log.debug("Message with subtype message_changed not yet implemented");
+            return;
+        } else if (msg.subtype === "message_deleted" && msg.deleted_ts) {
+            // const originalEvent = await this.main.datastore.getEventBySlackId(msg.channel, msg.deleted_ts);
+            // if (originalEvent) {
+            //     const botClient = this.main.botIntent.matrixClient;
+            //     await botClient.redactEvent(originalEvent.roomId, originalEvent.eventId);
+            //     return;
+            // }
+            // // If we don't have the event
+            // throw Error("unknown_message");
+            log.debug("Message with subtype message_deleted not yet implemented");
+            return;
+        } else if (msg.subtype === "message_replied") {
+            // Slack sends us one of these as well as a normal message event
+            // when using RTM, so we ignore it.
+            log.debug("Message with subtype message_replied not yet implemented");
+            return;
+        }
+
+        return room.onSlackMessage(msg);
+    }
+
     //
     // private async handleReaction(event: ISlackEventReaction, teamId: string) {
     //     // Reactions store the channel in the item

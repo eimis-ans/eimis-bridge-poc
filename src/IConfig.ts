@@ -44,12 +44,12 @@ export interface IConfig {
         appservice_port?: number;
         appservice_host?: string;
     };
-    //
-    // encryption?: {
-    //     enabled: boolean;
-    //     pantalaimon_url: string;
-    // };
-    //
+
+    encryption?: {
+        enabled: boolean;
+        pantalaimon_url: string;
+    };
+
     tls?: {
         key_file: string;
         crt_file: string;

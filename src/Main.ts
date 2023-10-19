@@ -1,6 +1,9 @@
 import {AppServiceRegistration, Bridge, Intent, Logger, StateLookup} from "matrix-appservice-bridge";
 import {IConfig} from "./IConfig";
 import {SlackHookHandler} from "./SlackHookHandler";
+import {SlackRoomStore} from "./bridge1/SlackRoomStore";
+import {Datastore} from "./datastore/Models";
+import {SlackGhostStore} from "./bridge1/SlackGhostStore";
 
 const STARTUP_RETRY_TIME_MS = 5000;
 const log = new Logger("Main");
@@ -9,6 +12,9 @@ export class Main {
     private bridge: Bridge;
     private stateStorage: StateLookup|null = null;
     private slackHookHandler?: SlackHookHandler;
+    public datastore!: Datastore;
+    private ghosts!: SlackGhostStore; // Defined in .run
+    public readonly rooms: SlackRoomStore = new SlackRoomStore();
 
     constructor(public readonly config: IConfig, registration: AppServiceRegistration) {
         this.bridge = new Bridge({
@@ -37,7 +43,6 @@ export class Main {
                     try{
                         // of course this fails if eimis_firstUser is not in the room
                         if (event.type === "m.room.message" && event.sender !== '@eimis_firstUser:matrix.local') {
-                            // this.bridge => pose problème
                             const intent = this.bridge.getIntent("@eimis_firstUser:matrix.local");
                             intent.ensureProfile("first user");
                             intent.sendText(event.room_id, "Ta gueule");
@@ -86,6 +91,40 @@ export class Main {
     public get botUserId(): string {
         return this.bridge.getBot().getUserId();
     }
+
+    public get encryptRoom() {
+        return this.config.encryption?.enabled;
+    }
+
+    public get ghostStore(): SlackGhostStore {
+        return this.ghosts;
+    }
+
+    public async listGhostUsers(roomId: string): Promise<string[]> {
+        const userIds = await this.listAllUsers(roomId);
+        const regexp = new RegExp("^@" + this.config.username_prefix);
+        return userIds.filter((i) => i.match(regexp));
+    }
+
+    public async listAllUsers(roomId: string): Promise<string[]> {
+        const members = await this.bridge.getBot().getJoinedMembers(roomId);
+        return Object.keys(members);
+    }
+
+    public getIntent(userId: string): Intent {
+        return this.bridge.getIntent(userId);
+    }
+
+    // public getUrlForMxc(mxcUrl: string, local = false): string {
+    //     // Media may be encrypted, use this.
+    //     let baseUrl = this.config.homeserver.url;
+    //     // if (this.config.encryption?.enabled && local) {
+    //     //     baseUrl = this.config.encryption?.pantalaimon_url;
+    //     // } else if (this.config.homeserver.media_url) {
+    //     //     baseUrl = this.config.homeserver.media_url;
+    //     // }
+    //     return `${baseUrl}/_matrix/media/r0/download/${mxcUrl.slice("mxc://".length)}`;
+    // }
 
     /**
      * Ensures the bridge bot is registered and updates its profile info.

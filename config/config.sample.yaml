@@ -49,6 +49,12 @@ slack_hook_port: 9898
 #       "./debug.log": "info"
 #       "./error.log": "error"
 
+# # Optional. Enable encryption in DMs and private rooms.
+# encryption:
+#   # Should encryption be enabled
+#   #
+#   enabled: false
+
 # # Optional. Set the bot's profile on startup
 bot_profile:
   # Optional. Set the displayname.
